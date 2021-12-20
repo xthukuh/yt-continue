@@ -1,2 +1,5 @@
 # yt-continue
-Chrome Extension: Automatically clicks "YES" on the youtube dialog "Video paused. Continue watching?"
+
+Chrome Extension: Automatically clicks _**YES**_ on the youtube _**Video paused. Continue watching?**_ dialog.
+
+### 💖 By Thuku. _**Enjoy!**_
