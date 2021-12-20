@@ -54,6 +54,15 @@
 		.content {
 			padding: 10px;
 		}
+		.input {
+			display: flex;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+		.input label {
+			width: 110px;
+			color: #888;
+		}
 		.links {
 			white-space: nowrap;
 			text-align: right;
@@ -82,6 +91,10 @@
 		<div class="content">
 			<h2>YT-Continue <small>v1.0.0</small></h2>
 			<p>Automatically clicks "YES" on the youtube dialog "Video paused. Continue watching?".</p>
+			<div class="input">
+				<label>Check Interval</label>
+				<input id="check_interval" type="text" placeholder="Check Interval (ms)" />
+			</div>
 			<div class="links">
 				<a href="#!" id="update">Update Status</a>
 				&nbsp;|&nbsp;

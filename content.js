@@ -1,28 +1,4 @@
 (() => {
-
-	//to datetime
-	const datetime = (date, notime=false) => {
-		let d = date instanceof Date && !isNaN(date.getTime()) ? date : new Date(date);
-		if (!(d instanceof Date && !isNaN(d.getTime()))) throw new Error('Invalid timestamp date value.');
-		let str = d.getFullYear()
-		+ '-' + ('00' + (d.getMonth() + 1)).slice(-2)
-		+ '-' + ('00' + (d.getDate() + 1)).slice(-2);
-		if (!notime){
-			str += ' ' + ('00' + d.getHours()).slice(-2)
-			+ ':' + ('00' + d.getMinutes()).slice(-2)
-			+ ':' + ('00' + d.getSeconds()).slice(-2);
-		}
-		return str;
-	};
-	
-	//embed script
-	const embed = fn => {
-		const script = document.createElement('script');
-		script.text = `(${fn.toString()})();`
-		document.documentElement.appendChild(script);
-	};
-
-	//embed function
 	embed(() => {
 		const YTContinue = {
 			title: null,
@@ -33,8 +9,8 @@
 			checks: 0,
 			actions: 0,
 			stop: null,
-			interval: null,
-			duration: 1000,
+			timer: null,
+			interval: currentCheckInterval,
 			getTextNode: function(txt, parent, cs){
 				parent = parent || document.body;
 				let children = parent.childNodes, s = cs ? txt.trim() : txt.trim().toLowerCase();
@@ -60,12 +36,12 @@
 			status: function(){
 				let html = [], keys = [
 					'title','time_started','time_stopped',
-					'time_checked','checks','actions'
+					'time_checked','interval','checks','actions'
 				];
 				keys.forEach(key => {
 					let val = this[key];
 					if (val === 0) val = '';
-					else if (val instanceof Date) val = datetime(val);
+					else if (val instanceof Date) val = val.toLocaleString();
 					else if (val instanceof Boolean) val = val ? 'true' : 'false';
 					else if (val === null || val === undefined) val = '';
 					if (val !== '') html.push(`<strong>${key}:</strong> ${val}`);
@@ -84,14 +60,13 @@
 					this.actions += 1;
 				}
 			},
-			start: function(){
-				if (this.stop) this.stop();
-				this.interval = setInterval(() => YTContinue.check(), this.duration);
-				this.time_started = new Date();
-				this.stop = () => {
-					clearInterval(this.interval);
-					this.interval = null;
-					this.time_stopped = new Date();
+			start: function(update){
+				if (this.stop) this.stop(update);
+				this.timer = setInterval(() => YTContinue.check(), this.interval);
+				if (!update) this.time_started = new Date();
+				this.stop = update => {
+					clearInterval(this.timer);
+					if (!update) this.time_stopped = new Date();
 				};
 			},
 		};
@@ -99,15 +74,46 @@
 		window.YTContinue = YTContinue;
 		window.addEventListener('message', e => {
 			if (e.source !== window) return;
-			if (e.data.type === 'POST_GET' && e.data.text === 'report_status'){
-				window.postMessage({type: 'POST_GET_RESULT', text: YTContinue.status()}, '*');
+			if (e.data.type === 'POST_GET'){
+				if (e.data.text === 'report_status'){
+					window.postMessage({type: 'POST_GET_RESULT', text: YTContinue.status()}, '*');
+				}
+				else if (e.data.text === 'change_interval' && e.data.interval){
+					YTContinue.interval = e.data.interval;
+					YTContinue.start(1);
+					window.postMessage({type: 'POST_GET_RESULT', text: String(YTContinue.interval)}, '*');
+				}
 			}
 		}, false);
 	});
+	chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+		if (['report_status', 'change_interval'].includes(msg.text)){
+			if (msg.text === 'change_interval'){
+				let interval = checkInterval(msg.interval);
+				localStorage.setItem('check_interval', String(interval));
+				msg.interval = interval;
+			}
+			postGet(msg).then(sendResponse);
+			return true;
+		}
+	});
+})();
 
-	//post get
-	const postGet = (text, timeout) => new Promise(resolve => {
-		timeout = Number.isInteger(timeout) && timeout >= 500 ? timeout : 500;
+function checkInterval(val){
+	val = Number.isInteger(val) ? val : parseInt(val);
+	return !isNaN(val) && val >= 500 ? val : 2000;
+}
+
+function embed(fn){
+	let currentCheckInterval = checkInterval(localStorage.getItem('check_interval'));
+	let text = `(${fn.toString()})();`.replace('currentCheckInterval', String(currentCheckInterval));
+	const script = document.createElement('script');
+	script.text = text;
+	document.documentElement.appendChild(script);
+}
+
+function postGet(data, timeout=2000){
+	return new Promise(resolve => {
 		let resolved = 0, stopListener = () => {}, resolveValue = value => {
 			if (resolved) return;
 			resolved = 1;
@@ -119,7 +125,7 @@
 			if (e.data.type === 'POST_GET_RESULT') resolveValue(e.data.text);
 		};
 		window.addEventListener('message', handleMessage, false);
-		window.postMessage({type: 'POST_GET', text}, '*');
+		window.postMessage({...Object.assign({}, data), type: 'POST_GET'}, '*');
 		let timer, stopTimer = () => {
 			if (!timer) return;
 			clearInterval(timer);
@@ -137,13 +143,4 @@
 			stopTimer();
 		};
 	});
-	
-	//message listener - post get
-	chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-		if (['report_status'].includes(msg.text)){
-			postGet(msg.text).then(sendResponse);
-			return true;
-		}
-	});
-})();
-
+}
