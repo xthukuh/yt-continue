@@ -5,7 +5,7 @@ import { URL_MATCHES } from './utils-constants.js';
 export const lastError = (...args) => {
 	let error = chrome.runtime.lastError;
 	if (!error) return;
-	log('warn', 'RuntimeLastError', error, ...args);
+	log('warn', `RuntimeLastError error=${JSON.stringify(error)}, args=${JSON.stringify(args)}`);
 };
 
 //query tabs
@@ -105,7 +105,7 @@ export const addListener = (event_type, event_name, event_handler, event_tag) =>
 
 	//error helper
 	const _error = err => {
-		log('error', `! addListener - ${err}`, params);
+		log('error', `! addListener - ${err}`, JSON.stringify(params));
 		throw new Error(err);
 	};
 

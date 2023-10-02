@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "version": "1.0.1",
+  "name": "YT-Continue",
+  "description": "Autoclick yes on dialog 'Video paused. Continue watching?'",
+  "icons": {
+    "128": "icon128.png",
+    "48": "icon48.png",
+    "16": "icon16.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "background"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://*.youtube.com/*"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.youtube.com/*"
+      ],
+      "run_at": "document_idle",
+      "js": [
+        "content.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "manifest.json",
+        "content-main.js",
+        "utils-log.js",
+        "utils-chrome.js",
+        "utils-constants.js",
+        "index.html",
+        "index.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "script-src": ["self", "unsafe-eval"],
+    "object-src": "self"
+  },
+  "action": {
+    "default_icon": "icon16.png",
+    "default_popup": "index.html"
+  }
+}

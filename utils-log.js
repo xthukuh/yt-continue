@@ -20,11 +20,11 @@ export default function log(type, ...args){
 	
 	//set method
 	let log_method;
-	if (log_type && window.console.hasOwnProperty(log_type) && 'function' === typeof window.console[log_type]){
-		log_method = window.console[log_type];
+	if (log_type && console.hasOwnProperty(log_type) && 'function' === typeof console[log_type]){
+		log_method = console[log_type];
 		is_type = 1;
 	}
-	else log_method = window.console[LOG_METHOD];
+	else log_method = console[LOG_METHOD];
 
 	//set params
 	let params = [];
